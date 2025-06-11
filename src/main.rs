@@ -1,4 +1,4 @@
-const N: usize = 4;
+const N: usize = 15;
 
 fn next(c: &mut [bool; N]) -> bool {
     for i in 0..N {
@@ -29,7 +29,7 @@ fn recurse(depth: usize, matrix: &mut [[bool; N]; N]) {
             matrix[depth][i] = matrix[depth - 1][i];
         }
     }
-    'outer: while !next(&mut matrix[depth]) {
+    'outer: while next(&mut matrix[depth]) {
         // Check orthogonal
         for d in 0..depth {
             if inner_prod(&matrix[d], &matrix[depth]) != 0 {
