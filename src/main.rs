@@ -124,19 +124,19 @@ fn recurse(depth: usize, matrix: &mut [[bool; N]; N]) -> usize {
         next(&mut matrix[depth]);
     }
     'outer: loop {
-        for i in 0..N {
-            println!("{}", Row { r: matrix[i] });
-        }
-        println!();
+        // for i in 0..N {
+        //     println!("{}", Row { r: matrix[i] });
+        // }
+        // println!();
 
         // Check orthogonal
         for d in 0..depth {
             match inner_prod_zero(&matrix[d], &matrix[depth]) {
                 Orthogonal::No(k) => {
+                    if all_ones(&matrix[depth]) {
+                        return result;
+                    }
                     if k > 1 {
-                        if all_ones(&matrix[depth]) {
-                            return result;
-                        }
                         if matrix[depth][k] == false {
                             for j in 0..=k {
                                 matrix[depth][j] ^= true;
