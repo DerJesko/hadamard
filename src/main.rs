@@ -1,16 +1,42 @@
-use std::cmp::Ordering;
+use std::fmt;
 
-const K: usize = 8;
+const K: usize = 3;
 const N: usize = 2 * K;
 
-fn next(c: &mut [bool; N]) -> bool {
+struct Row {
+    r: [bool; N],
+}
+
+impl fmt::Display for Row {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[").unwrap();
+        for i in 0..N {
+            if self.r[i] {
+                write!(f, " 1,").unwrap();
+            } else {
+                write!(f, "-1,").unwrap();
+            }
+        }
+        write!(f, "]")
+    }
+}
+
+fn next(c: &mut [bool; N]) {
     for i in 0..N {
         c[i] = c[i] ^ true;
         if c[i] {
-            return true;
+            return;
         }
     }
-    return false;
+}
+
+fn all_ones(c: &[bool; N]) -> bool {
+    for i in 0..N {
+        if !c[i] {
+            return false;
+        }
+    }
+    true
 }
 
 fn b2i(b: bool) -> isize {
@@ -36,16 +62,15 @@ enum Orthogonal {
     Yes,
     No(usize),
 }
-
 fn inner_prod_zero(a: &[bool; N], b: &[bool; N]) -> Orthogonal {
     let mut result = 0;
     for i in K..N {
         result += b2i(a[i]) * b2i(b[i]);
     }
-    println!("{:?}", result);
+    //println!("{:?}", result);
     for i in 1..=K {
         result += b2i(a[K - i]) * b2i(b[K - i]);
-        println!("r {:?}, k-i {:?}", result, K - i);
+        //println!("r {:?}, k-i {:?}", result, K - i);
         if K - i < result.abs() as usize {
             return Orthogonal::No(K - i);
         }
@@ -57,6 +82,7 @@ fn inner_prod_zero(a: &[bool; N], b: &[bool; N]) -> Orthogonal {
         Orthogonal::No(0)
     }
 }
+
 /*
 #[test]
 fn inner_prod_zero_0() {
@@ -89,24 +115,47 @@ fn inner_prod_zero_1() {
     assert_eq!(inner_prod_zero(&[false; N], &[true; N]), Orthogonal::No(7));
 }
 */
-fn recurse(depth: usize, matrix: &mut [[bool; N]; N]) {
+fn recurse(depth: usize, matrix: &mut [[bool; N]; N]) -> usize {
+    let mut result = 0;
     if depth != 0 {
         for i in 0..N {
             matrix[depth][i] = matrix[depth - 1][i];
         }
+        next(&mut matrix[depth]);
     }
-    'outer: while next(&mut matrix[depth]) {
+    'outer: loop {
+        for i in 0..N {
+            println!("{}", Row { r: matrix[i] });
+        }
+        println!();
+
         // Check orthogonal
         for d in 0..depth {
             match inner_prod_zero(&matrix[d], &matrix[depth]) {
-                Orthogonal::No(_) => {
-                    /*println!(
-                        "fail depth {:?} d {:?} matrix {:?} inner {:?}",
-                        depth,
-                        d,
-                        matrix,
-                        inner_prod(&matrix[d], &matrix[depth])
-                    );*/
+                Orthogonal::No(k) => {
+                    if k > 1 {
+                        if all_ones(&matrix[depth]) {
+                            return result;
+                        }
+                        if matrix[depth][k] == false {
+                            for j in 0..=k {
+                                matrix[depth][j] ^= true;
+                            }
+                        } else {
+                            let mut all_true = true;
+                            for j in 0..k {
+                                all_true &= matrix[depth][j];
+                                matrix[depth][j] = true;
+                            }
+                            if all_true {
+                                next(&mut matrix[depth]);
+                            }
+                        }
+                        //println!("after  {}", Row { r: matrix[depth] });
+                        //println!("");
+                    } else {
+                        next(&mut matrix[depth]);
+                    }
                     continue 'outer;
                 }
                 Orthogonal::Yes => (),
@@ -114,13 +163,21 @@ fn recurse(depth: usize, matrix: &mut [[bool; N]; N]) {
         }
         // Recurse or done
         if depth < N - 1 {
-            recurse(depth + 1, matrix);
+            result += recurse(depth + 1, matrix);
         } else {
-            println!("{:?}", matrix);
+            result += 1;
+            //println!("{:?}", matrix);
+        }
+
+        if result >= 1000 {
+            return result;
+        }
+        if all_ones(&matrix[depth]) {
+            return result;
         }
     }
 }
 
 fn main() {
-    recurse(0, &mut [[false; N]; N]);
+    println!("{}", recurse(0, &mut [[false; N]; N]));
 }
